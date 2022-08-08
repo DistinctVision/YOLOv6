@@ -108,6 +108,8 @@ venv.bak/
 #vscode
 .vscode/*
 
+.idea/
+
 #user scripts
 *.sh
 
