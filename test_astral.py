@@ -27,6 +27,9 @@ import logging
 
 
 def check_img_size(img_size, s=32, floor=0) -> Union[int, List[int]]:
+    if isinstance(img_size, tuple):
+        img_size = list(img_size)
+
     def make_divisible( x, divisor):
         # Upward revision the value x to make it evenly divisible by the divisor.
         return math.ceil(x / divisor) * divisor
@@ -63,7 +66,7 @@ def main(dataset: AstralDatasetReader, weights_path: Union[Path, str] = 'checkpo
     from yolov6.core.inferer import Inferer
 
     checkpoint: str = "yolov6s"  # @param ["yolov6s", "yolov6n", "yolov6t"]
-    device: str = "cpu"  # @param ["gpu", "cpu"]
+    device: str = "gpu"  # @param ["gpu", "cpu"]
     half: bool = False  # @param {type:"boolean"}
 
     img_size: int = 640  # @param {type:"integer"}
@@ -96,7 +99,8 @@ def main(dataset: AstralDatasetReader, weights_path: Union[Path, str] = 'checkpo
     if device.type != 'cpu':
         model(torch.zeros(1, 3, *img_size).to(device).type_as(next(model.model.parameters())))  # warmup
 
-    for frame in dataset:
+    for frame_index in range(300, len(dataset)):
+        frame = dataset[frame_index]
         image = frame['fc_far']
         img, img_src = precess_image(image, img_size, stride, half)
         img = img.to(device)
@@ -116,8 +120,9 @@ def main(dataset: AstralDatasetReader, weights_path: Union[Path, str] = 'checkpo
                 label = f'{class_names[class_num]} {conf:.2f}'
                 Inferer.plot_box_and_label(img_ori, max(round(sum(img_ori.shape) / 2 * 0.003), 2), xyxy, label,
                                            color=Inferer.generate_colors(class_num, True))
+        img_ori = cv2.resize(img_ori, None, None, 0.5, 0.5)
         cv2.imshow('fc_far', img_ori)
-        cv2.waitKey()
+        cv2.waitKey(13)
 
 
 if __name__ == '__main__':
